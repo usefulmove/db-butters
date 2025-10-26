@@ -44,41 +44,57 @@ order by 1;
 
 
 -- 4. most purchased item and number of purchases by each customer
-with most_purchased as (
-    select product_id,
-           count(*) as n_sold
-    from sales
-    group by 1
-    order by 2 desc
-    limit 1
-)
+with sales_most_purchased as (
+         select s.product_id,
+                count(*) as n_sold
+         from sales s
+         group by 1
+         order by 2 desc
+         limit 1
+     ),
+
+     sales_most_purchased_detail as (
+         select sm.product_id,
+                m.product_name,
+                sm.n_sold
+         from sales_most_purchased sm
+              left join menu m on sm.product_id = m.product_id
+     )
 
 select distinct
     s.customer_id,
-    (select m.product_id from most_purchased m) as product_id,
+    (select product_id from sales_most_purchased_detail)
+        as product_id,
+    (select product_name from sales_most_purchased_detail)
+        as product_name,
     p.n_purchased
 from sales s
      left join (select s.customer_id,
                        count(*) as n_purchased
                 from sales s
-                where s.product_id = (select m.product_id from most_purchased m)
+                where s.product_id = (select product_id
+                                      from sales_most_purchased_detail)
                 group by 1) p
-        on s.customer_id = p.customer_id
+         on s.customer_id = p.customer_id
 order by 1;
 
 
 -- 5. most popular item for each customer
 with popular_ranks as (
-    select customer_id,
-           product_id,
+    select s.customer_id,
+           s.product_id,
+           m.product_name,
            count(*) as count,
-           rank() over(partition by customer_id order by count(*) desc) as pop_rank
-    from sales
-    group by 1, 2
+           rank() over(partition by s.customer_id order by count(*) desc) as pop_rank
+    from sales s
+         left join menu m on s.product_id = m.product_id
+    group by 1, 2, 3
+    order by 1, 2
 )
 
 select customer_id,
-       string_agg(product_id) as most_popular_items
+       string_agg(product_id) as most_popular_items_id,
+       string_agg(product_name) as most_popular_items_name
 from popular_ranks
 where pop_rank = 1
 group by 1
@@ -86,10 +102,11 @@ order by 1;
 
 
 -- 6. first item purchase for new members
-with product_order as (
+with product_orders_by_members as (
     select s.customer_id,
            s.product_id,
-           rank() over(partition by s.customer_id order by order_date) as order_of_purchase
+           rank() over(partition by s.customer_id order by order_date)
+               as order_of_purchase
     from sales s
          left join members m on s.customer_id = m.customer_id
     where s.customer_id in (select customer_id from members)
@@ -98,9 +115,26 @@ with product_order as (
 
 select customer_id,
        product_id
-from product_order
+from product_orders_by_members
 where order_of_purchase = 1
 order by 1;
 
 
--- 7.
+-- 7. last item purchased before becoming member
+with product_orders_by_members_all_time as (
+    select s.customer_id,
+           s.product_id,
+           rank() over(partition by s.customer_id order by order_date desc)
+               as reverse_order_of_purchase,
+    from sales s
+             left join members m on s.customer_id = m.customer_id
+    where s.customer_id in (select customer_id from members)
+          and s.order_date < m.join_date
+)
+
+select customer_id,
+       string_agg(product_id) as product_ids
+from product_orders_by_members_all_time
+where reverse_order_of_purchase = 1
+group by 1
+order by 1;
