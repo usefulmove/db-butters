@@ -93,8 +93,8 @@ with popular_ranks as (
 )
 
 select customer_id,
-       string_agg(product_id) as most_popular_items_id,
-       string_agg(product_name) as most_popular_items_name
+       string_agg(product_id) as most_popular_item_ids,
+       string_agg(product_name) as most_popular_item_names
 from popular_ranks
 where pop_rank = 1
 group by 1
@@ -124,17 +124,33 @@ order by 1;
 with product_orders_by_members_all_time as (
     select s.customer_id,
            s.product_id,
+           m.product_name,
            rank() over(partition by s.customer_id order by order_date desc)
                as reverse_order_of_purchase,
     from sales s
-             left join members m on s.customer_id = m.customer_id
+             left join members mb on s.customer_id = mb.customer_id
+             left join menu m on s.product_id = m.product_id
     where s.customer_id in (select customer_id from members)
-          and s.order_date < m.join_date
+          and s.order_date < mb.join_date
 )
 
 select customer_id,
-       string_agg(product_id) as product_ids
+       string_agg(product_id) as product_ids,
+       string_agg(product_name) as product_names,
 from product_orders_by_members_all_time
 where reverse_order_of_purchase = 1
+group by 1
+order by 1;
+
+
+-- 8. number of items and total spent before becoming a member
+select s.customer_id,
+       count(*) as total_items_purchased,
+       sum(m.price) as total_spent
+from sales s
+     left join members mb on s.customer_id = mb.customer_id
+     left join menu m on s.product_id = m.product_id
+where s.order_date < mb.join_date
+      or mb.join_date is null
 group by 1
 order by 1;
