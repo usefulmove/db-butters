@@ -32,14 +32,23 @@ order by 1;
 
 
 -- 3. first item purchased by each customer
+with sales_by_date as (
+         select customer_id,
+                order_date,
+                string_agg(s.product_id, ',' order by s.product_id) as items_purchased_ids,
+                string_agg(m.product_name, ',' order by s.product_id) as items_purchased_names
+         from sales s
+              left join menu m on s.product_id = m.product_id
+         group by 1, 2
+)
+
 select distinct
-    s.customer_id,
-    first_value(m.product_id) over(partition by s.customer_id order by order_date)
-        as product_id,
-    first_value(m.product_name) over(partition by s.customer_id order by order_date)
-        as product_name
-from sales s
-     left join menu m on s.product_id = m.product_id
+    customer_id,
+    first_value(items_purchased_ids) over(partition by customer_id order by order_date)
+        as first_purchase_ids,
+    first_value(items_purchased_names) over(partition by customer_id order by order_date)
+        as first_purchase_names
+from sales_by_date
 order by 1;
 
 
