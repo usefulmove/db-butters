@@ -163,3 +163,16 @@ where s.order_date < mb.join_date
       or mb.join_date is null
 group by 1
 order by 1;
+
+
+-- 9. points accumulation per customer (10 points for every dollar spent, 2x multiplier for sushi)
+select s.customer_id,
+       sum(case
+               when m.product_id = 1
+                   then m.price * 10 * 2
+               else m.price * 10
+           end) as points
+from sales s
+     left join menu m on s.product_id = m.product_id
+group by 1
+order by 1;
