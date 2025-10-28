@@ -110,7 +110,7 @@ group by 1
 order by 1;
 
 
--- 6. first item purchase for new members
+-- 6. first item purchase after membership
 with product_orders_by_members as (
     select s.customer_id,
            s.product_id,
@@ -122,9 +122,12 @@ with product_orders_by_members as (
           and s.order_date >= m.join_date
 )
 
-select customer_id,
-       product_id
-from product_orders_by_members
+select p.customer_id,
+       p.product_id,
+       m.product_name,
+       m.price
+from product_orders_by_members p
+     left join menu m on p.product_id = m.product_id
 where order_of_purchase = 1
 order by 1;
 
@@ -169,10 +172,14 @@ order by 1;
 select s.customer_id,
        sum(case
                when m.product_id = 1
-                   then m.price * 10 * 2
+               then m.price * 10 * 2
                else m.price * 10
            end) as points
 from sales s
      left join menu m on s.product_id = m.product_id
 group by 1
 order by 1;
+
+
+-- 10.
+-- 10. In the first week after a customer joins the program (including their join date) they earn 2x points on all items, not just sushi - how many points do customer A and B have at the end of January?
