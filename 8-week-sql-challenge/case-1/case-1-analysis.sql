@@ -181,5 +181,16 @@ group by 1
 order by 1;
 
 
--- 10.
--- 10. In the first week after a customer joins the program (including their join date) they earn 2x points on all items, not just sushi - how many points do customer A and B have at the end of January?
+-- 10. enhanced points program
+select s.customer_id,
+       sum(case
+              when (s.order_date - mb.join_date between 0 and 7)
+                   or m.product_id = 1
+              then m.price * 10 * 2
+              else m.price * 10
+           end) as points
+from sales s
+     left join members mb on s.customer_id = mb.customer_id
+     left join menu m on s.product_id = m.product_id
+group by 1
+order by 1;
