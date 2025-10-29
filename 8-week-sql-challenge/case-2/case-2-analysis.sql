@@ -87,3 +87,25 @@ where cancellation is null
 group by 1
 order by 2 desc
 limit 1;
+
+
+-- 7. changed vs unchanged pizzas delivered per customer
+select customer_id,
+       sum(if(exclusions is null and extras is null, 0, 1))
+           as changed,
+       sum(if(exclusions is null and extras is null, 1, 0))
+           as unchanged
+from clean_customer_orders c
+     left join clean_runner_orders r on c.order_id = r.order_id
+where cancellation is null
+group by 1
+order by 1;
+
+
+-- 8. delivered with both exclusions and extras
+select count(*) as pizzas_w_exclusions_and_extras
+from clean_customer_orders c
+         left join clean_runner_orders r on c.order_id = r.order_id
+where cancellation is null
+      and exclusions is not null
+      and extras is not null;
