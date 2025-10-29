@@ -194,3 +194,52 @@ from sales s
      left join menu m on s.product_id = m.product_id
 group by 1
 order by 1;
+
+
+-- bonus - join all the things
+select s.customer_id,
+       s.order_date,
+       m.product_name,
+       m.price,
+       case
+           when s.order_date >= mb.join_date
+           then 'Y'
+           else 'N'
+       end
+           as member
+from sales s
+     left join menu m on s.product_id = m.product_id
+     left join members mb on s.customer_id = mb.customer_id
+order by 1, 2, 3;
+
+
+-- bonus - rank all the things
+with join_all as (
+        select s.customer_id,
+               s.order_date,
+               m.product_name,
+               m.price,
+               case
+                   when s.order_date >= mb.join_date
+                   then 'Y'
+                   else 'N'
+               end
+                   as member
+        from sales s
+                 left join menu m on s.product_id = m.product_id
+                 left join members mb on s.customer_id = mb.customer_id
+        order by 1, 2, 3
+)
+
+select *,
+       case
+           when member = 'Y'
+           then rank() over(
+               partition by customer_id, member
+               order by order_date, product_name
+           )
+           else null
+       end
+           as ranking
+from join_all
+order by 1, 2, 3;
