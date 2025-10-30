@@ -1,5 +1,7 @@
 /* data cleaning */
+
 begin;
+
 
 -- clean customer_orders table
 create or replace view clean_customer_orders as
@@ -45,12 +47,12 @@ select count(pizza_id) as pizzas_ordered
 from clean_customer_orders;
 
 
--- 2. unique customer orders
+-- 2. number of unique customer orders
 select count(distinct order_id) as customer_orders
 from clean_customer_orders;
 
 
--- 3. successful order deliveries by each runner
+-- 3. number of successful order deliveries by each runner
 select runner_id,
        count(*) as orders_delivered
 from clean_runner_orders
