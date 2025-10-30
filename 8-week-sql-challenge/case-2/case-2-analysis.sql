@@ -109,3 +109,43 @@ from clean_customer_orders c
 where cancellation is null
       and exclusions is not null
       and extras is not null;
+
+
+-- 9. pizzas orders by hour of the day
+with orders_by_hour as (
+        select extract(hour from order_time) as hour_of_day,
+               count(*) as pizzas_ordered
+        from clean_customer_orders
+        group by 1
+),
+
+     all_hours as (select * as hour_of_day from range(0, 24))
+
+select h.hour_of_day,
+       coalesce(pizzas_ordered, 0) as pizzas_ordered
+from all_hours h
+     left join orders_by_hour o on h.hour_of_day = o.hour_of_day
+where h.hour_of_day >= 8
+order by 1;
+
+
+-- 10. orders by day of the week
+select case
+           when d.day_of_week = 0 then 'Sun'
+           when d.day_of_week = 1 then 'Mon'
+           when d.day_of_week = 2 then 'Tue'
+           when d.day_of_week = 3 then 'Wed'
+           when d.day_of_week = 4 then 'Thu'
+           when d.day_of_week = 5 then 'Fri'
+           when d.day_of_week = 6 then 'Sat'
+           else ''
+       end as day_name,
+       coalesce(pizzas_ordered, 0) as pizzas_ordered
+from (select * as day_of_week from range(0, 7)) d
+     left join (select dayofweek(order_time) as day_of_week,
+                       -- dayname(order_time) as day_name,
+                       -- strftime('%a', order_time) as day_name,
+                       count(*) as pizzas_ordered
+                from clean_customer_orders
+                group by 1) agg on d.day_of_week = agg.day_of_week
+order by d.day_of_week;
