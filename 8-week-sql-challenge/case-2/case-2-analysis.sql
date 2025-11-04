@@ -42,17 +42,17 @@ from runner_orders;
 
 /* data analysis */
 
--- 1. pizzas ordered
+-- A.1. pizzas ordered
 select count(pizza_id) as pizzas_ordered
 from clean_customer_orders;
 
 
--- 2. number of unique customer orders
+-- A.2. number of unique customer orders
 select count(distinct order_id) as customer_orders
 from clean_customer_orders;
 
 
--- 3. number of successful order deliveries by each runner
+-- A.3. number of successful order deliveries by each runner
 select runner_id,
        count(*) as orders_delivered
 from clean_runner_orders
@@ -61,7 +61,7 @@ group by 1
 order by 1;
 
 
--- 4. deliveries by pizza type
+-- A.4. deliveries by pizza type
 select c.pizza_id,
        count(*) as delivered
 from clean_runner_orders r
@@ -70,7 +70,7 @@ where r.cancellation is null
 group by 1;
 
 
--- 5. pizzas ordered by each customer by type
+-- A.5. pizza types ordered by each customer
 select customer_id,
        pizza_name,
        count(*) as pizzas_ordered
@@ -80,7 +80,7 @@ group by 1, 2
 order by 1, 2;
 
 
--- 6. most pizzas delivered on a single order
+-- A.6. most pizzas delivered on a single order
 select c.order_id,
        count(*) as delivered
 from clean_runner_orders r
@@ -91,7 +91,7 @@ order by 2 desc
 limit 1;
 
 
--- 7. changed vs unchanged pizzas delivered per customer
+-- A.7. changed vs unchanged pizzas delivered per customer
 select customer_id,
        sum(if(exclusions is null and extras is null, 0, 1))
            as changed,
@@ -104,7 +104,7 @@ group by 1
 order by 1;
 
 
--- 8. delivered with both exclusions and extras
+-- A.8. delivered with both exclusions and extras
 select count(*) as pizzas_w_exclusions_and_extras
 from clean_customer_orders c
          left join clean_runner_orders r on c.order_id = r.order_id
@@ -113,7 +113,7 @@ where cancellation is null
       and extras is not null;
 
 
--- 9. pizzas orders by hour of the day
+-- A.9. pizzas orders by hour of the day
 with orders_by_hour as (
         select extract(hour from order_time) as hour_of_day,
                count(*) as pizzas_ordered
@@ -131,7 +131,7 @@ where h.hour_of_day >= 8
 order by 1;
 
 
--- 10. orders by day of the week
+-- A.10. orders by day of the week
 select case
            when d.day_of_week = 0 then 'Sun'
            when d.day_of_week = 1 then 'Mon'
@@ -151,3 +151,22 @@ from (select * as day_of_week from range(0, 7)) d
                 from clean_customer_orders
                 group by 1) agg on d.day_of_week = agg.day_of_week
 order by d.day_of_week;
+
+
+-- B.1. runners signed up for each one week period
+select (registration_date - cast('2021-01-01' as date)) // 7 as week,
+       count(*) as runners_registered
+from runners
+group by 1
+order by 1;
+
+
+-- B.2. average pickup time (minutes) per runner
+select runner_id,
+       round(extract(epoch from avg(pickup_time - order_time)) / 60.0, 2)
+           as avg_pickup_time
+from clean_customer_orders
+     left join clean_runner_orders using (order_id)
+where pickup_time is not null
+group by 1
+order by 1;
