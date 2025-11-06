@@ -19,23 +19,23 @@ create or replace view clean_customer_orders as
 
 -- clean runner_orders table
 create or replace view clean_runner_orders as
-select order_id,
-       runner_id,
-       cast(if(trim(pickup_time) in ('', 'null'),
-               null,
-               trim(pickup_time)
-            ) as timestamp) as pickup_time,
-       cast(if(trim(distance) in ('', 'null'),
-               null,
-               trim(regexp_replace(distance, '[^0-9\.]', '', 'g'))
-            ) as decimal) as distance_kms,
-       cast(if(trim(duration) in ('', 'null'),
-               null,
-               regexp_replace(duration, '[^0-9]', '', 'g')
-            ) as integer) as duration_mins,
-       if(trim(cancellation) in ('', 'null'), null, trim(cancellation))
-                            as cancellation
-from runner_orders;
+     select order_id,
+          runner_id,
+          cast(if(trim(pickup_time) in ('', 'null'),
+                    null,
+                    trim(pickup_time)
+               ) as timestamp) as pickup_time,
+          cast(if(trim(distance) in ('', 'null'),
+                    null,
+                    trim(regexp_replace(distance, '[^0-9\.]', '', 'g'))
+               ) as decimal) as distance_kms,
+          cast(if(trim(duration) in ('', 'null'),
+                    null,
+                    regexp_replace(duration, '[^0-9]', '', 'g')
+               ) as integer) as duration_mins,
+          if(trim(cancellation) in ('', 'null'), null, trim(cancellation))
+                              as cancellation
+     from runner_orders;
 
 
 
@@ -113,7 +113,7 @@ where cancellation is null
       and extras is not null;
 
 
--- A.9. pizzas orders by hour of the day
+-- A.9. pizzas ordered by hour of the day
 with orders_by_hour as (
         select extract(hour from order_time) as hour_of_day,
                count(*) as pizzas_ordered
@@ -147,13 +147,13 @@ from (select * as day_of_week from range(0, 7)) d
      left join (select dayofweek(order_time) as day_of_week,
                        -- dayname(order_time) as day_name,
                        -- strftime('%a', order_time) as day_name,
-                       count(*) as pizzas_ordered
+                       count(distinct order_id) as pizzas_ordered
                 from clean_customer_orders
                 group by 1) agg on d.day_of_week = agg.day_of_week
 order by d.day_of_week;
 
 
--- B.1. runners signed up for each one week period
+-- B.1. runners signed up for each one-week period
 select (registration_date - cast('2021-01-01' as date)) // 7 as week,
        count(*) as runners_registered
 from runners
