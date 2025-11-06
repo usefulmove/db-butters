@@ -170,3 +170,29 @@ from clean_customer_orders
 where pickup_time is not null
 group by 1
 order by 1;
+
+
+-- B.3. relationship between number of pizzas and order prep time
+with order_pickup_times as (
+        select
+            c.order_id,
+            count(*) as pizzas,
+            avg((extract(epoch from r.pickup_time) - extract(epoch from c.order_time))) / 60
+                as order_pickup_minutes -- same for every order line (order pizza)
+        from
+            clean_customer_orders c
+        left join
+            clean_runner_orders r
+            using (order_id)
+        where
+            r.cancellation is null
+        group by 1
+)
+
+select
+    pizzas,
+    round(avg(order_pickup_minutes), 1) as average_pickup_time
+from
+    order_pickup_times
+group by 1
+order by 1;
