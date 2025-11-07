@@ -154,7 +154,7 @@ order by d.day_of_week;
 
 
 -- B.1. runners signed up for each one-week period
-select (registration_date - cast('2021-01-01' as date)) // 7 as week,
+select date_diff('day', cast('2021-01-01' as date), registration_date) // 7 as week,
        count(*) as runners_registered
 from runners
 group by 1
@@ -162,14 +162,20 @@ order by 1;
 
 
 -- B.2. average pickup time (minutes) per runner
-select runner_id,
-       round(extract(epoch from avg(pickup_time - order_time)) / 60.0, 2)
-           as avg_pickup_time
-from clean_customer_orders
-     left join clean_runner_orders using (order_id)
-where pickup_time is not null
-group by 1
-order by 1;
+select
+     runner_id,
+     round(avg(date_diff('epoch', order_time, pickup_time)) / 60, 2)
+         as avg_pickup_time
+from
+     clean_customer_orders
+left join
+     clean_runner_orders using (order_id)
+where
+     pickup_time is not null
+group by
+     1
+order by
+     1;
 
 
 -- B.3. relationship between number of pizzas and order prep time
