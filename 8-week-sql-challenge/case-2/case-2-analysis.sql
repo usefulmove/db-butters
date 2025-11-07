@@ -1,7 +1,9 @@
+begin; -- begin transaction to prevent permanently changing the database
+
+
+
+
 /* data cleaning */
-
-begin;
-
 
 -- clean customer_orders table
 create or replace view clean_customer_orders as
@@ -28,7 +30,7 @@ create or replace view clean_runner_orders as
           cast(if(trim(distance) in ('', 'null'),
                     null,
                     trim(regexp_replace(distance, '[^0-9\.]', '', 'g'))
-               ) as decimal) as distance_kms,
+               ) as decimal) as distance_km,
           cast(if(trim(duration) in ('', 'null'),
                     null,
                     regexp_replace(duration, '[^0-9]', '', 'g')
@@ -202,3 +204,17 @@ from
     order_pickup_times
 group by 1
 order by 1;
+
+
+-- B.4. average distance travelled per customer
+select
+    c.customer_id,
+    round(avg(r.distance_km), 1) as avg_distance_km
+from
+    clean_customer_orders c
+left join
+    clean_runner_orders r using (order_id)
+group by
+    1
+order by
+    1;
