@@ -34,7 +34,7 @@ create or replace view clean_runner_orders as
           cast(if(trim(duration) in ('', 'null'),
                     null,
                     regexp_replace(duration, '[^0-9]', '', 'g')
-               ) as integer) as duration_mins,
+               ) as integer) as duration_min,
           if(trim(cancellation) in ('', 'null'), null, trim(cancellation))
                               as cancellation
      from runner_orders;
