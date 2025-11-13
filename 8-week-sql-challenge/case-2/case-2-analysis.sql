@@ -1,12 +1,13 @@
 begin; -- begin transaction to prevent permanently changing the database
 
 
+set schema = pizza_runner;
 
 
 /* data cleaning */
 
 -- clean customer_orders table
-create or replace view clean_customer_orders as
+create or replace temporary view clean_customer_orders as
     select
         order_id,
         customer_id,
@@ -20,7 +21,7 @@ create or replace view clean_customer_orders as
 
 
 -- clean runner_orders table
-create or replace view clean_runner_orders as
+create or replace temporary view clean_runner_orders as
      select order_id,
           runner_id,
           cast(if(trim(pickup_time) in ('', 'null'),
@@ -218,3 +219,40 @@ group by
     1
 order by
     1;
+
+
+-- B.5. difference between longest and shortest delivery times
+TODO
+
+
+-- B.6.
+TODO
+
+
+-- B.7.
+TODO
+
+
+-- C.1. standard ingredientes for each pizza
+with unnested_pizza_recipes as (
+    select
+        pizza_id,
+        unnest(string_split(replace(toppings, ' ', ''), ','))
+            as topping_id
+    from
+        pizza_recipes
+)
+
+select
+    p.pizza_id,
+    n.pizza_name,
+    string_agg(t.topping_name, ', ' order by t.topping_name)
+        as toppings
+from
+    unnested_pizza_recipes p
+left join
+    pizza_toppings t using (topping_id)
+left join
+    pizza_names n using (pizza_id)
+group by
+    1, 2;
