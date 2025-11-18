@@ -256,3 +256,57 @@ left join
     pizza_names n using (pizza_id)
 group by
     1, 2;
+
+
+-- C.2. most common added extra
+with extras as (
+        select
+            cast(trim(unnest(split(extras, ','))) as integer)
+                as topping_id
+        from
+            clean_customer_orders
+        where
+            extras is not null
+)
+
+select
+    topping_id,
+    topping_name,
+    count(*) as count
+from
+    extras
+left join
+    pizza_toppings using (topping_id)
+group by
+    1, 2
+order by
+    count(*) desc
+limit
+    1;
+
+
+-- C.3. most common exclusion
+with exclusions as (
+        select
+            cast(trim(unnest(split(exclusions, ','))) as integer)
+                as topping_id
+        from
+            clean_customer_orders
+        where
+            exclusions is not null
+)
+
+select
+    topping_id,
+    topping_name,
+    count(*) as count
+from
+    exclusions
+left join
+    pizza_toppings using (topping_id)
+group by
+    1, 2
+order by
+    count(*) desc
+limit
+    1;
